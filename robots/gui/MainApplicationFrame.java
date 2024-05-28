@@ -20,6 +20,7 @@ import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -27,19 +28,11 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import robots.src.log.Logger;
 
-/**
- * Что требуется сделать:
- * 1. Метод создания меню перегружен функционалом и трудно читается.
- * Следует разделить его на серию более простых методов (или вообще выделить отдельный класс).
- *
- */
 public class MainApplicationFrame extends JFrame {
     private final JDesktopPane desktopPane = new JDesktopPane();
     private final Map<String, InternalFrameState> internalFrameStates = new HashMap<>();
 
     public MainApplicationFrame() {
-        //Make the big window be indented 50 pixels from each edge
-        //of the screen.
         int inset = 50;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
@@ -48,7 +41,6 @@ public class MainApplicationFrame extends JFrame {
 
         setContentPane(desktopPane);
 
-
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
@@ -56,22 +48,21 @@ public class MainApplicationFrame extends JFrame {
         gameWindow.setSize(400, 400);
         addWindow(gameWindow);
 
-        setJMenuBar(generateMenuBar());
+        setJMenuBar(createMenuBar());
 
         restoreWindowState();
 
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                System.out.println("Главное окно приложения закрывается...");
-                saveWindowState();
+                exitApplication();
             }
         });
 
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
     }
 
-    private JMenuBar generateMenuBar() {
+    private JMenuBar createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
         menuBar.add(createLookAndFeelMenu());
@@ -86,7 +77,7 @@ public class MainApplicationFrame extends JFrame {
         JMenuItem exitMenuItem = new JMenuItem("Выход");
         exitMenuItem.setMnemonic(KeyEvent.VK_X);
         exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.ALT_MASK));
-        exitMenuItem.addActionListener(e -> System.exit(0));
+        exitMenuItem.addActionListener(e -> exitApplication());
         fileMenu.add(exitMenuItem);
 
         return fileMenu;
@@ -140,7 +131,6 @@ public class MainApplicationFrame extends JFrame {
                         internalFrame.isIcon()
                 );
                 internalFrameStates.put(windowId, state);
-                // Сохранение состояния окна в файл свойств
                 properties.setProperty(windowId + "_x", String.valueOf(state.getX()));
                 properties.setProperty(windowId + "_y", String.valueOf(state.getY()));
                 properties.setProperty(windowId + "_width", String.valueOf(state.getWidth()));
@@ -167,7 +157,6 @@ public class MainApplicationFrame extends JFrame {
                 InternalFrameState state = new InternalFrameState(x, y, width, height, isIcon);
                 internalFrameStates.put(windowId, state);
             }
-            // Применение состояния окон при восстановлении
             for (JInternalFrame internalFrame : desktopPane.getAllFrames()) {
                 String windowId = internalFrame.getTitle();
                 InternalFrameState state = internalFrameStates.get(windowId);
@@ -196,5 +185,20 @@ public class MainApplicationFrame extends JFrame {
     protected void addWindow(JInternalFrame frame) {
         desktopPane.add(frame);
         frame.setVisible(true);
+    }
+
+    private void exitApplication() {
+        int confirm = JOptionPane.showOptionDialog(this,
+                "Вы действительно хотите выйти из приложения?",
+                "Подтверждение выхода",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                new String[]{"Да", "Нет"},
+                "Нет");
+        if (confirm == JOptionPane.YES_OPTION) {
+            saveWindowState();
+            System.exit(0);
+        }
     }
 }
