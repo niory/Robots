@@ -1,4 +1,4 @@
-package log;
+package robots.src.log;
 
 public class LogEntry
 {
